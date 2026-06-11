@@ -39,31 +39,11 @@ private:
   arma::mat weights_;
 };
 
-class IndicatorKernel : public IPSKernel {
+class CompactDenseKernel : public IPSKernel {
 public:
-  explicit IndicatorKernel(const arma::mat& factor) : factor_(factor) {}
-
-  arma::uword n_rows() const {
-    return factor_.n_rows;
-  }
-
-  arma::mat multiply(const arma::mat& rhs) const {
-    return factor_ * (factor_.t() * rhs) / static_cast<double>(factor_.n_rows);
-  }
-
-  arma::mat dense() const {
-    return factor_ * factor_.t() / static_cast<double>(factor_.n_rows);
-  }
-
-private:
-  arma::mat factor_;
-};
-
-class ProjectionKernel : public IPSKernel {
-public:
-  ProjectionKernel(const arma::mat& compact_weights,
-                   const arma::uvec& groups,
-                   arma::uword n_rows)
+  CompactDenseKernel(const arma::mat& compact_weights,
+                     const arma::uvec& groups,
+                     arma::uword n_rows)
     : compact_weights_(compact_weights), groups_(groups), n_rows_(n_rows) {}
 
   arma::uword n_rows() const {
@@ -183,12 +163,48 @@ arma::mat pairwise_exp_from_gram(const arma::mat& gram,
   return arma::exp(-0.5 * dist);
 }
 
+arma::mat clean_distance_from_gram(const arma::mat& gram,
+                                   const arma::vec& norms) {
+  arma::mat dist = -2.0 * gram;
+  dist.each_col() += norms;
+  dist.each_row() += norms.t();
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+  for (long jj = 0; jj < static_cast<long>(dist.n_cols); ++jj) {
+    const arma::uword j = static_cast<arma::uword>(jj);
+    for (arma::uword i = 0; i < dist.n_rows; ++i) {
+      dist(i, j) = clean_zero(dist(i, j));
+    }
+    dist(j, j) = 0.0;
+  }
+
+  return dist;
+}
+
+double weighted_acos_contribution(const std::vector<double>& args,
+                                  const std::vector<double>& weights) {
+  const std::size_t n = args.size();
+  if (n == 0) {
+    return 0.0;
+  }
+
+  double out = 0.0;
+  for (std::size_t i = 0; i < n; ++i) {
+    out += (M_PI - std::acos(args[i])) * weights[i];
+  }
+  return out;
+}
+
 arma::mat build_projection_compact_weights(const arma::mat& X,
                                            const arma::vec& counts,
                                            arma::uword n_original) {
   const arma::uword n_unique = X.n_rows;
   arma::mat gram = X * X.t();
   arma::vec norms = gram.diag();
+  arma::mat distances = clean_distance_from_gram(gram, norms);
+  arma::mat sqrt_distances = arma::sqrt(distances);
   arma::mat weights(n_unique, n_unique, fill::zeros);
 
 #ifdef _OPENMP
@@ -196,29 +212,35 @@ arma::mat build_projection_compact_weights(const arma::mat& X,
 #endif
   for (long jj = 0; jj < static_cast<long>(n_unique); ++jj) {
     const arma::uword j = static_cast<arma::uword>(jj);
+    std::vector<double> acos_args;
+    std::vector<double> acos_weights;
+    acos_args.reserve(n_unique);
+    acos_weights.reserve(n_unique);
+
     for (arma::uword l = 0; l <= j; ++l) {
-      const double idxjl = clean_zero(norms[j] - 2.0 * gram(j, l) + norms[l]);
+      const double idxjl = distances(j, l);
       double out = 0.0;
+      acos_args.clear();
+      acos_weights.clear();
 
       for (arma::uword r = 0; r < n_unique; ++r) {
-        const double xjl =
-          gram(j, l) - gram(j, r) - gram(l, r) + norms[r];
-        const double xjr =
-          clean_zero(norms[j] - 2.0 * gram(j, r) + norms[r]);
-        const double xlr =
-          clean_zero(norms[l] - 2.0 * gram(l, r) + norms[r]);
+        const double xjr = distances(j, r);
+        const double xlr = distances(l, r);
 
         if ((xlr == 0.0) && (xjr == 0.0)) {
           out += 2.0 * M_PI * counts[r];
         } else if (((xlr != 0.0) && (xjr != 0.0)) && (idxjl != 0.0)) {
-          double arg = xjl / (std::sqrt(xjr) * std::sqrt(xlr));
+          const double xjl = 0.5 * (xjr + xlr - idxjl);
+          double arg = xjl / (sqrt_distances(j, r) * sqrt_distances(l, r));
           arg = std::max(-1.0, std::min(1.0, arg));
-          out += std::abs(M_PI - std::acos(arg)) * counts[r];
+          acos_args.push_back(arg);
+          acos_weights.push_back(counts[r]);
         } else {
           out += M_PI * counts[r];
         }
       }
 
+      out += weighted_acos_contribution(acos_args, acos_weights);
       weights(j, l) = out / static_cast<double>(n_original);
       weights(l, j) = weights(j, l);
     }
@@ -227,16 +249,99 @@ arma::mat build_projection_compact_weights(const arma::mat& X,
   return weights;
 }
 
-ProjectionKernel* make_projection_kernel_from_rows(const arma::mat& X) {
+arma::vec weighted_mean_by_col(const arma::mat& X,
+                               const arma::vec& counts,
+                               double n_original) {
+  return (X.t() * counts) / n_original;
+}
+
+arma::vec weighted_sd_by_col(const arma::mat& X,
+                             const arma::vec& counts,
+                             const arma::vec& means,
+                             double n_original) {
+  arma::vec out(X.n_cols, fill::zeros);
+  const double denom = n_original - 1.0;
+
+  for (arma::uword col = 0; col < X.n_cols; ++col) {
+    arma::vec centered = X.col(col) - means[col];
+    out[col] = std::sqrt(arma::dot(counts, centered % centered) / denom);
+  }
+
+  return out;
+}
+
+arma::mat weighted_cov(const arma::mat& X,
+                       const arma::vec& counts,
+                       double n_original) {
+  arma::vec means = weighted_mean_by_col(X, counts, n_original);
+  arma::mat centered = X;
+  centered.each_row() -= means.t();
+  centered.each_col() %= arma::sqrt(counts);
+  return centered.t() * centered / (n_original - 1.0);
+}
+
+arma::mat build_exp_compact_weights(const arma::mat& X,
+                                    const arma::vec& counts,
+                                    arma::uword n_original,
+                                    const std::string& X_trans) {
+  const double n_total = static_cast<double>(n_original);
+  const arma::uword npar = X.n_cols;
+
+  if (X_trans == "normal") {
+    arma::mat xprob(X.n_rows, X.n_cols);
+    arma::vec means = weighted_mean_by_col(X, counts, n_total);
+    arma::vec sds = weighted_sd_by_col(X, counts, means, n_total);
+
+    for (arma::uword l = 0; l < npar; ++l) {
+      xprob.col(l) = arma::normcdf((X.col(l) - means[l]) / sds[l]);
+    }
+
+    arma::mat gram = xprob * xprob.t();
+    arma::vec norms = arma::sum(xprob % xprob, 1);
+    return pairwise_exp_from_gram(gram, norms);
+  }
+
+  if (X_trans == "arctan") {
+    arma::mat xprob(X.n_rows, X.n_cols);
+    arma::vec means = weighted_mean_by_col(X, counts, n_total);
+    arma::vec sds = weighted_sd_by_col(X, counts, means, n_total);
+    const double v = 0.0;
+
+    for (arma::uword l = 0; l < npar; ++l) {
+      xprob.col(l) = arma::atan((X.col(l) - v * means[l]) / sds[l]);
+    }
+
+    arma::mat gram = xprob * xprob.t();
+    arma::vec norms = arma::sum(xprob % xprob, 1);
+    return pairwise_exp_from_gram(gram, norms);
+  }
+
+  arma::mat vcinv = arma::pinv(weighted_cov(X, counts, n_total));
+  arma::mat transformed = X * vcinv;
+  arma::mat gram = transformed * X.t();
+  arma::vec norms = arma::sum(transformed % X, 1);
+  return pairwise_exp_from_gram(gram, norms);
+}
+
+arma::mat build_indicator_compact_weights(const arma::mat& X,
+                                          const arma::vec& counts,
+                                          arma::uword n_original) {
+  arma::mat factor = ips_build_indicator_factor(X);
+  arma::mat weighted_factor = factor;
+  weighted_factor.each_row() %= counts.t();
+  return weighted_factor * factor.t() / static_cast<double>(n_original);
+}
+
+CompactDenseKernel* make_projection_kernel_from_rows(const arma::mat& X) {
   CompactRows compact = compact_rows(X);
   arma::mat compact_weights =
     build_projection_compact_weights(compact.X, compact.counts, X.n_rows);
 
-  return new ProjectionKernel(compact_weights, compact.groups, X.n_rows);
+  return new CompactDenseKernel(compact_weights, compact.groups, X.n_rows);
 }
 
-ProjectionKernel* make_projection_kernel_from_unique(const arma::mat& X,
-                                                     const arma::vec& counts) {
+CompactDenseKernel* make_projection_kernel_from_unique(const arma::mat& X,
+                                                       const arma::vec& counts) {
   arma::uword n_original = 0;
   for (arma::uword i = 0; i < counts.n_elem; ++i) {
     n_original += static_cast<arma::uword>(counts[i]);
@@ -254,7 +359,35 @@ ProjectionKernel* make_projection_kernel_from_unique(const arma::mat& X,
   arma::mat compact_weights =
     build_projection_compact_weights(X, counts, n_original);
 
-  return new ProjectionKernel(compact_weights, groups, n_original);
+  return new CompactDenseKernel(compact_weights, groups, n_original);
+}
+
+IPSKernel* make_exp_kernel_from_rows(const arma::mat& X,
+                                     const std::string& X_trans) {
+  CompactRows compact = compact_rows(X);
+
+  if (compact.X.n_rows == X.n_rows) {
+    return new DenseKernel(ips_build_exp_weights(X, X_trans));
+  }
+
+  arma::mat compact_weights =
+    build_exp_compact_weights(compact.X, compact.counts, X.n_rows, X_trans);
+
+  return new CompactDenseKernel(compact_weights, compact.groups, X.n_rows);
+}
+
+IPSKernel* make_indicator_kernel_from_rows(const arma::mat& X) {
+  CompactRows compact = compact_rows(X);
+
+  if (compact.X.n_rows == X.n_rows) {
+    arma::mat factor = ips_build_indicator_factor(X);
+    return new DenseKernel(factor * factor.t() / static_cast<double>(X.n_rows));
+  }
+
+  arma::mat compact_weights =
+    build_indicator_compact_weights(compact.X, compact.counts, X.n_rows);
+
+  return new CompactDenseKernel(compact_weights, compact.groups, X.n_rows);
 }
 
 SEXP wrap_kernel(IPSKernel* kernel) {
@@ -398,12 +531,12 @@ SEXP kernelIPSdense(const arma::mat& weights) {
 
 // [[Rcpp::export]]
 SEXP kernelIPSexp(const arma::mat& X, std::string X_trans) {
-  return wrap_kernel(new DenseKernel(ips_build_exp_weights(X, X_trans)));
+  return wrap_kernel(make_exp_kernel_from_rows(X, X_trans));
 }
 
 // [[Rcpp::export]]
 SEXP kernelIPSind(const arma::mat& X) {
-  return wrap_kernel(new IndicatorKernel(ips_build_indicator_factor(X)));
+  return wrap_kernel(make_indicator_kernel_from_rows(X));
 }
 
 // [[Rcpp::export]]

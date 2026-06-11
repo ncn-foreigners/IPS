@@ -27,21 +27,23 @@ test_that("internal kernels match dense weight matrices", {
   for (item in kernels) {
     expect_equal(IPS:::kernelIPSDense(item$kernel), item$dense,
                  tolerance = 1e-10)
-    expect_equal(
-      IPS:::objIPS(b, d, x, item$kernel, 0, whs),
-      IPS:::objIPS(b, d, x, item$dense, 0, whs),
-      tolerance = 1e-10
-    )
-    expect_equal(
-      IPS:::gradIPS(b, d, x, item$kernel, 0, whs),
-      IPS:::gradIPS(b, d, x, item$dense, 0, whs),
-      tolerance = 1e-10
-    )
-    expect_equal(
-      IPS:::linIPS(b, d, p, x, item$kernel, 0, whs),
-      IPS:::linIPS(b, d, p, x, item$dense, 0, whs),
-      tolerance = 1e-8
-    )
+    for (treated in c(0, 1)) {
+      expect_equal(
+        IPS:::objIPS(b, d, x, item$kernel, treated, whs),
+        IPS:::objIPS(b, d, x, item$dense, treated, whs),
+        tolerance = 1e-10
+      )
+      expect_equal(
+        IPS:::gradIPS(b, d, x, item$kernel, treated, whs),
+        IPS:::gradIPS(b, d, x, item$dense, treated, whs),
+        tolerance = 1e-10
+      )
+      expect_equal(
+        IPS:::linIPS(b, d, p, x, item$kernel, treated, whs),
+        IPS:::linIPS(b, d, p, x, item$dense, treated, whs),
+        tolerance = 1e-8
+      )
+    }
     expect_equal(
       IPS:::objLIPS(b, d, z, x, item$kernel, whs),
       IPS:::objLIPS(b, d, z, x, item$dense, whs),
@@ -58,6 +60,27 @@ test_that("internal kernels match dense weight matrices", {
       tolerance = 1e-8
     )
   }
+})
+
+test_that("compact exp and indicator kernels match dense weights with duplicates", {
+  set.seed(20260612)
+  base <- matrix(round(rnorm(24), 1), ncol = 3)
+  idx <- c(2, 5, 2, 7, 1, 5, 8, 3, 3, 3, 4, 6, 1, 8, 7, 2)
+  x <- base[idx, , drop = FALSE]
+
+  for (x_trans in c("normal", "arctan", "mahalanobis")) {
+    expect_equal(
+      IPS:::kernelIPSDense(IPS:::kernelIPSexp(x, x_trans)),
+      IPS:::weightIPSexp(x, x_trans),
+      tolerance = 1e-10
+    )
+  }
+
+  expect_equal(
+    IPS:::kernelIPSDense(IPS:::kernelIPSind(x)),
+    IPS:::weightIPSind(x),
+    tolerance = 1e-10
+  )
 })
 
 test_that("projection kernel handles sorted and unsorted duplicate rows", {
