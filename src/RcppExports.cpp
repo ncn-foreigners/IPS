@@ -66,6 +66,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// kernelIPSexpWeighted
+SEXP kernelIPSexpWeighted(const arma::mat& X, std::string X_trans, const arma::vec& case_weights);
+RcppExport SEXP _IPS_kernelIPSexpWeighted(SEXP XSEXP, SEXP X_transSEXP, SEXP case_weightsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< std::string >::type X_trans(X_transSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type case_weights(case_weightsSEXP);
+    rcpp_result_gen = Rcpp::wrap(kernelIPSexpWeighted(X, X_trans, case_weights));
+    return rcpp_result_gen;
+END_RCPP
+}
 // kernelIPSind
 SEXP kernelIPSind(const arma::mat& X);
 RcppExport SEXP _IPS_kernelIPSind(SEXP XSEXP) {
@@ -77,6 +90,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// kernelIPSindWeighted
+SEXP kernelIPSindWeighted(const arma::mat& X, const arma::vec& case_weights);
+RcppExport SEXP _IPS_kernelIPSindWeighted(SEXP XSEXP, SEXP case_weightsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type case_weights(case_weightsSEXP);
+    rcpp_result_gen = Rcpp::wrap(kernelIPSindWeighted(X, case_weights));
+    return rcpp_result_gen;
+END_RCPP
+}
 // kernelIPSproj
 SEXP kernelIPSproj(const arma::mat& X);
 RcppExport SEXP _IPS_kernelIPSproj(SEXP XSEXP) {
@@ -85,6 +110,18 @@ BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
     rcpp_result_gen = Rcpp::wrap(kernelIPSproj(X));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kernelIPSprojWeighted
+SEXP kernelIPSprojWeighted(const arma::mat& X, const arma::vec& case_weights);
+RcppExport SEXP _IPS_kernelIPSprojWeighted(SEXP XSEXP, SEXP case_weightsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type case_weights(case_weightsSEXP);
+    rcpp_result_gen = Rcpp::wrap(kernelIPSprojWeighted(X, case_weights));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -165,6 +202,25 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// optimIPSCpp
+Rcpp::List optimIPSCpp(const arma::vec& par, const arma::vec& d, const arma::mat& X, SEXP w, double treated_flag, const arma::vec& whs, int maxit, double abstol, double reltol);
+RcppExport SEXP _IPS_optimIPSCpp(SEXP parSEXP, SEXP dSEXP, SEXP XSEXP, SEXP wSEXP, SEXP treated_flagSEXP, SEXP whsSEXP, SEXP maxitSEXP, SEXP abstolSEXP, SEXP reltolSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec& >::type par(parSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type d(dSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type w(wSEXP);
+    Rcpp::traits::input_parameter< double >::type treated_flag(treated_flagSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type whs(whsSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type abstol(abstolSEXP);
+    Rcpp::traits::input_parameter< double >::type reltol(reltolSEXP);
+    rcpp_result_gen = Rcpp::wrap(optimIPSCpp(par, d, X, w, treated_flag, whs, maxit, abstol, reltol));
+    return rcpp_result_gen;
+END_RCPP
+}
 // weightIPSexp
 arma::mat weightIPSexp(const arma::mat& X, std::string X_trans);
 RcppExport SEXP _IPS_weightIPSexp(SEXP XSEXP, SEXP X_transSEXP) {
@@ -217,13 +273,17 @@ static const R_CallMethodDef CallEntries[] = {
     {"_IPS_gradLIPS", (DL_FUNC) &_IPS_gradLIPS, 6},
     {"_IPS_kernelIPSdense", (DL_FUNC) &_IPS_kernelIPSdense, 1},
     {"_IPS_kernelIPSexp", (DL_FUNC) &_IPS_kernelIPSexp, 2},
+    {"_IPS_kernelIPSexpWeighted", (DL_FUNC) &_IPS_kernelIPSexpWeighted, 3},
     {"_IPS_kernelIPSind", (DL_FUNC) &_IPS_kernelIPSind, 1},
+    {"_IPS_kernelIPSindWeighted", (DL_FUNC) &_IPS_kernelIPSindWeighted, 2},
     {"_IPS_kernelIPSproj", (DL_FUNC) &_IPS_kernelIPSproj, 1},
+    {"_IPS_kernelIPSprojWeighted", (DL_FUNC) &_IPS_kernelIPSprojWeighted, 2},
     {"_IPS_kernelIPSDense", (DL_FUNC) &_IPS_kernelIPSDense, 1},
     {"_IPS_linIPS", (DL_FUNC) &_IPS_linIPS, 7},
     {"_IPS_linLIPS", (DL_FUNC) &_IPS_linLIPS, 7},
     {"_IPS_objIPS", (DL_FUNC) &_IPS_objIPS, 6},
     {"_IPS_objLIPS", (DL_FUNC) &_IPS_objLIPS, 6},
+    {"_IPS_optimIPSCpp", (DL_FUNC) &_IPS_optimIPSCpp, 9},
     {"_IPS_weightIPSexp", (DL_FUNC) &_IPS_weightIPSexp, 2},
     {"_IPS_weightIPSind", (DL_FUNC) &_IPS_weightIPSind, 1},
     {"_IPS_weightIPSproj", (DL_FUNC) &_IPS_weightIPSproj, 1},

@@ -8,6 +8,9 @@ public:
   virtual ~IPSKernel() {}
   virtual arma::uword n_rows() const = 0;
   virtual arma::mat multiply(const arma::mat& rhs) const = 0;
+  virtual double quad(const arma::vec& rhs) const = 0;
+  virtual arma::rowvec crossprod(const arma::vec& lhs,
+                                 const arma::mat& rhs) const = 0;
   virtual arma::mat dense() const = 0;
 };
 
@@ -15,6 +18,8 @@ bool ips_is_kernel(SEXP kernel);
 arma::mat ips_kernel_multiply(SEXP kernel, const arma::mat& rhs);
 arma::vec ips_kernel_multiply(SEXP kernel, const arma::vec& rhs);
 double ips_kernel_quad(SEXP kernel, const arma::vec& rhs);
+arma::rowvec ips_kernel_crossprod(SEXP kernel, const arma::vec& lhs,
+                                  const arma::mat& rhs);
 arma::mat ips_kernel_dense(SEXP kernel);
 
 arma::mat ips_build_exp_weights(const arma::mat& X,

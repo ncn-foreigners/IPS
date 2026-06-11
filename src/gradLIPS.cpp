@@ -27,10 +27,6 @@ arma::vec gradLIPS(const arma::vec& b, const arma::vec& d,
   arma::mat hltedotw(nobj, npar, fill::zeros);
   arma::mat hltedotw0(nobj, npar, fill::zeros);
   
-  arma::mat Qdot(nobj, npar);
-  arma::vec Qd(npar);
-  
-  
   for (int j = 0;  j<npar; j++){
     hltedotw1.col(j) = - whs% d % (z % (1.0 - ipsfit)/ipsfit + (1.0 - z) % ipsfit /(1.0 - ipsfit)) /mean(whs % d % ( z/ipsfit -  (1.0-z)/(1.0-ipsfit)) ) %  X.col(j);
     hltedotw1.col(j) =  hltedotw1.col(j) +  whs % d % ( z/ipsfit -  (1.0-z)/(1.0-ipsfit))/mean(whs % d % ( z/ipsfit -  (1.0-z)/(1.0-ipsfit)) ) * mean(whs% d % (z % (1.0 - ipsfit)/ipsfit + (1.0 - z) % ipsfit /(1.0 - ipsfit)) /mean(whs % d % ( z/ipsfit -  (1.0-z)/(1.0-ipsfit)) ) %  X.col(j));
@@ -47,16 +43,8 @@ arma::vec gradLIPS(const arma::vec& b, const arma::vec& d,
     
   }
   
-  Qdot = ips_kernel_multiply(w, hltedot1);
-  Qdot.each_col() %= hlte1;
-
-  arma::mat Qdot0 = ips_kernel_multiply(w, hltedot0);
-  Qdot0.each_col() %= hlte0;
-
-  Qdot += Qdot0;
-  Qdot /= nobj;
-  Qd = 2.0 * trans(mean(Qdot, 0));
-  
-  
-  return Qd;
+  arma::rowvec Qd_row = ips_kernel_crossprod(w, hlte1, hltedot1) +
+    ips_kernel_crossprod(w, hlte0, hltedot0);
+  const double n2 = static_cast<double>(nobj) * static_cast<double>(nobj);
+  return arma::trans(2.0 * Qd_row / n2);
 }

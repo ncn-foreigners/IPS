@@ -14,7 +14,10 @@ IPS_proj(
   whs = NULL,
   x_keep = FALSE,
   maxit = 50000,
-  allRows = FALSE
+  allRows = FALSE,
+  kernel = NULL,
+  init.method = c("glm", "CBPS"),
+  optim.engine = c("R", "cpp")
 )
 }
 \arguments{
@@ -39,6 +42,17 @@ parameters should be provided. Deafault is TRUE.}
 \item{maxit}{The maximum number of iterations. Defaults to 50000}
 
 \item{allRows}{Retained for backward compatibility. Duplicate rows are now handled automatically and do not need to be sorted.}
+
+\item{kernel}{Optional precomputed IPS kernel from \code{\link{ips_kernel}}.
+If supplied, \code{xbal} is not used to build a new kernel.}
+
+\item{init.method}{Method used to compute starting values when
+\code{beta.initial = NULL}. Default is \code{"glm"}; \code{"CBPS"} uses the
+optional \pkg{CBPS} package.}
+
+\item{optim.engine}{Optimizer backend. \code{"R"} uses \code{stats::optim}
+and preserves historical behavior; \code{"cpp"} uses an internal C++ BFGS
+implementation that evaluates the objective and gradient together.}
 }
 \value{
 A list containing the following components:
@@ -53,6 +67,6 @@ A list containing the following components:
 Integrated Propensity Score estimator based on projection weighting function
 }
 \references{
-Sant'Anna, Pedro H. C, Song, Xiaojun, and Xu, Qi (2019), \emph{Covariate Distribution Balance via Propensity Scores},
-      Working Paper <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3258551>.
+Sant'Anna, Pedro H. C., Song, Xiaojun, and Xu, Qi (2022), \emph{Covariate distribution balance via propensity scores},
+      \emph{Journal of Applied Econometrics}, 37(6), 1093-1120. <https://doi.org/10.1002/jae.2909>.
 }

@@ -1,6 +1,5 @@
 useDynLib(IPS, .registration=TRUE)
 importFrom(Rcpp, evalCpp)
-importFrom(plyr, count)
 export(ATE)
 export(ATT)
 export(DTE)
@@ -15,9 +14,10 @@ export(LQTE)
 export(IPS_exp)
 export(IPS_ind)
 export(IPS_proj)
+export(ips_kernel)
+export(weightit_ips)
 
 export(LIPS_exp)
 export(LIPS_ind)
 export(LIPS_proj)
-
-
+S3method(print, ips_kernel)

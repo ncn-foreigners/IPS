@@ -26,7 +26,7 @@ arma::vec gradIPS(const arma::vec& b, const arma::vec& d, const arma::mat& X,
   }
 
   arma::vec h0 = w0 - 1.0;
-  arma::mat Qdot;
+  arma::rowvec Qd_row;
 
   if (include_h1) {
     arma::vec w1_raw = whs % d / psfit;
@@ -39,23 +39,12 @@ arma::vec gradIPS(const arma::vec& b, const arma::vec& d, const arma::mat& X,
     }
 
     arma::vec h1 = w1 - 1.0;
-    arma::mat hdot(nobj, 2 * npar);
-    hdot.cols(0, npar - 1) = h1dot;
-    hdot.cols(npar, 2 * npar - 1) = h0dot;
-
-    arma::mat Whdot = ips_kernel_multiply(w, hdot);
-    arma::mat Qdot1 = Whdot.cols(0, npar - 1);
-    Qdot1.each_col() %= h1;
-    arma::mat Qdot0 = Whdot.cols(npar, 2 * npar - 1);
-    Qdot0.each_col() %= h0;
-    Qdot = (1.0 - treated_flag) * Qdot1 + Qdot0;
+    Qd_row = (1.0 - treated_flag) * ips_kernel_crossprod(w, h1, h1dot) +
+      ips_kernel_crossprod(w, h0, h0dot);
   } else {
-    Qdot = ips_kernel_multiply(w, h0dot);
-    Qdot.each_col() %= h0;
+    Qd_row = ips_kernel_crossprod(w, h0, h0dot);
   }
 
-  Qdot /= nobj;
-
-  arma::vec Qd = arma::trans(mean(Qdot, 0));
-  return Qd;
+  const double n2 = static_cast<double>(nobj) * static_cast<double>(nobj);
+  return arma::trans(Qd_row / n2);
 }

@@ -20,8 +20,8 @@
 #' \item{late.inf}{Estimated influence function of LATE estimator.}
 #'
 #' @references
-#'       Sant'Anna, Pedro H. C, Song, Xiaojun, and Xu, Qi (2019), \emph{Covariate Distribution Balance via Propensity Scores},
-#'       Working Paper <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3258551>.
+#'       Sant'Anna, Pedro H. C., Song, Xiaojun, and Xu, Qi (2022), \emph{Covariate distribution balance via propensity scores},
+#'       \emph{Journal of Applied Econometrics}, 37(6), 1093-1120. <https://doi.org/10.1002/jae.2909>.
 #' @export
 
 LATE <- function(y, z, d, x, ps, beta.lin.rep,

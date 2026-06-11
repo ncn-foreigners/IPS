@@ -13,6 +13,11 @@
 #' @param maxit The maximum number of iterations. Defaults to 50000.  = FALSE). Deafault is 999 if boot = TRUE
 #' @param x_keep Default is FALSE. If TRUE, we return covariate matrix in the output.
 #' @param allRows Retained for backward compatibility. Duplicate rows are now handled automatically and do not need to be sorted.
+#' @param kernel Optional precomputed IPS kernel from \code{\link{ips_kernel}}.
+#' If supplied, \code{xbal} is not used to build a new kernel.
+#' @param init.method Method used to compute starting values when
+#' \code{beta.initial = NULL}. Default is \code{"glm"}; \code{"CBPS"} uses the
+#' optional \pkg{CBPS} package.
 #' 
 #' @return A list containing the following components:
 #' \item{coefficients}{The estimated LIPS_proj coefficients}
@@ -24,8 +29,8 @@
 #'
 #'
 #' @references
-#'       Sant'Anna, Pedro H. C, Song, Xiaojun, and Xu, Qi (2019), \emph{Covariate Distribution Balance via Propensity Scores},
-#'       Working Paper <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3258551>.
+#'       Sant'Anna, Pedro H. C., Song, Xiaojun, and Xu, Qi (2022), \emph{Covariate distribution balance via propensity scores},
+#'       \emph{Journal of Applied Econometrics}, 37(6), 1093-1120. <https://doi.org/10.1002/jae.2909>.
 #'       
 #' @export
 
@@ -34,7 +39,9 @@ LIPS_proj = function(z, d, x, xbal = NULL,
                     beta.initial = NULL, lin.rep = TRUE,
                     whs = NULL,  x_keep = FALSE,
                     maxit = 50000,
-                    allRows = FALSE) {
+                    allRows = FALSE,
+                    kernel = NULL,
+                    init.method = c("glm", "CBPS")) {
   #-----------------------------------------------------------------------------
   # Define some underlying variables
   d <-  base::as.matrix(d)
@@ -44,7 +51,7 @@ LIPS_proj = function(z, d, x, xbal = NULL,
   k <- base::dim(x)[2]
 
   if(is.null(whs)) whs <- rep(1, n)
-  if(!is.numeric(whs)) base::stop("weights must be a NULL or a numeric vector")
+  whs <- .ips_validate_case_weights(whs, n, "whs")
   #-----------------------------------------------------------------------------
   # FIRST ELEMENT OF X MUST BE A CONSTANT
   if(all.equal(x[,1], rep(1,n)) == FALSE) {
@@ -55,19 +62,25 @@ LIPS_proj = function(z, d, x, xbal = NULL,
   #Weight function based on prjection weights
   # data_ips <- cbind(d,x)
   
-  if(is.null(xbal)) {
-    xbal <- x
-  } else {
-    xbal <- base::as.matrix(xbal)
+  w.proj <- .ips_validate_kernel(kernel, n, "proj")
+  if (base::is.null(w.proj)) {
+    if(is.null(xbal)) {
+      xbal <- x
+    } else {
+      xbal <- base::as.matrix(xbal)
+    }
+
+    w.proj <- if (.ips_has_case_weights(whs)) {
+      kernelIPSprojWeighted(xbal, whs)
+    } else {
+      kernelIPSproj(xbal)
+    }
   }
-  
-  w.proj <- kernelIPSproj(xbal)
   
   #-----------------------------------------------------------------------------
   # initial parameter value for LIPS
   if (is.null(beta.initial)==TRUE){
-    beta.initial <- base::suppressWarnings(CBPS::CBPS(z ~ x[,-1],
-                                                      ATT = 0)$coefficients)
+    beta.initial <- .ips_initial_beta(z, x, init.method)
    }
   #-----------------------------------------------------------------------------
   # Define the Objective function for exponential weights
@@ -107,7 +120,7 @@ LIPS_proj = function(z, d, x, xbal = NULL,
   lin.rep.hat <- NULL
   if (lin.rep == TRUE){
     lin.rep.hat <- linLIPS(beta.hat.ips, d, z, ips.hat, x, w.proj, whs)
-    covSing <- (Matrix::rankMatrix(base::crossprod(lin.rep.hat))[1] == base::dim(lin.rep.hat)[2])
+    covSing <- .ips_is_full_rank(base::crossprod(lin.rep.hat))
     if(covSing==FALSE) base::message("LIPS.proj: The variance-Covariance matrix is close to singular. Used Generalized-Inverse to compute std. errors.")
   }
   

@@ -9,7 +9,15 @@
 #' If TRUE, then the estimator aims to achieve covariate distribution balance for the treated subpopulation.
 #' @param X.trans description of which transformation of covariates is used to enforce compactness.
 #'            The alternatives are 'normal' (default), and 'arctan'.
+#' @param kernel Optional precomputed IPS kernel from \code{\link{ips_kernel}}.
+#' If supplied, \code{xbal} and \code{X.trans} are not used to build a new kernel.
 #' @param beta.initial An optional \eqn{k} x \eqn{1} vector of initial values for the parameters to be optimized over.
+#' @param init.method Method used to compute starting values when
+#' \code{beta.initial = NULL}. Default is \code{"glm"}; \code{"CBPS"} uses the
+#' optional \pkg{CBPS} package.
+#' @param optim.engine Optimizer backend. \code{"R"} uses \code{stats::optim}
+#' and preserves historical behavior; \code{"cpp"} uses an internal C++ BFGS
+#' implementation that evaluates the objective and gradient together.
 #' @param lin.rep Logical argument to whether an estimator for the asymptotic linear representation of the IPS
 #' parameters should be provided. Deafault is TRUE.
 #' @param whs An optional \eqn{n} x \eqn{1} vector of weights to be used. If NULL, then every observation has the same weights.
@@ -25,8 +33,8 @@
 #'
 #'
 #' @references
-#'       Sant'Anna, Pedro H. C, Song, Xiaojun, and Xu, Qi (2019), \emph{Covariate Distribution Balance via Propensity Scores},
-#'       Working Paper <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3258551>.
+#'       Sant'Anna, Pedro H. C., Song, Xiaojun, and Xu, Qi (2022), \emph{Covariate distribution balance via propensity scores},
+#'       \emph{Journal of Applied Econometrics}, 37(6), 1093-1120. <https://doi.org/10.1002/jae.2909>.
 #'       
 #' @export
 
@@ -35,7 +43,10 @@
 IPS_exp = function(d, x, xbal = NULL, X.trans = "normal", Treated = FALSE,
                    beta.initial = NULL, lin.rep = TRUE,
                    whs = NULL, x_keep = FALSE,
-                   maxit = 50000) {
+                   maxit = 50000,
+                   kernel = NULL,
+                   init.method = c("glm", "CBPS"),
+                   optim.engine = c("R", "cpp")) {
   #-----------------------------------------------------------------------------
   # Define some underlying variables
   d <-  base::as.matrix(d)
@@ -43,8 +54,9 @@ IPS_exp = function(d, x, xbal = NULL, X.trans = "normal", Treated = FALSE,
   n <- base::dim(x)[1]
   k <- base::dim(x)[2]
   treated.flag <- base::as.numeric(base::isTRUE(Treated))
+  optim.engine <- base::match.arg(optim.engine)
   if(is.null(whs)) whs <- rep(1, n)
-  if(!is.numeric(whs)) base::stop("weights must be a NULL or a numeric vector")
+  whs <- .ips_validate_case_weights(whs, n, "whs")
   #-----------------------------------------------------------------------------
   # FIRST ELEMENT OF X MUST BE A CONSTANT
   if(all.equal(as.numeric(x[,1]), rep(1,n)) == FALSE) {
@@ -52,19 +64,25 @@ IPS_exp = function(d, x, xbal = NULL, X.trans = "normal", Treated = FALSE,
   }
   #-----------------------------------------------------------------------------
   #Weight function based on exponential: exp{iu'phi(X)}
-  if(is.null(xbal)) {
-    w.exp <- kernelIPSexp(x[,-1], X.trans)
-  } else {
-    xbal <- base::as.matrix(xbal)
-    w.exp <- kernelIPSexp(xbal, X.trans)
+  w.exp <- .ips_validate_kernel(kernel, n, "exp")
+  if (base::is.null(w.exp)) {
+    if(is.null(xbal)) {
+      xbal.kernel <- x[, -1, drop = FALSE]
+    } else {
+      xbal.kernel <- base::as.matrix(xbal)
+    }
+    w.exp <- if (.ips_has_case_weights(whs)) {
+      kernelIPSexpWeighted(xbal.kernel, X.trans, whs)
+    } else {
+      kernelIPSexp(xbal.kernel, X.trans)
+    }
   }
   
   
   #-----------------------------------------------------------------------------
   # initial parameter value for IPS
   if (is.null(beta.initial)==TRUE){
-    beta.initial <- base::suppressWarnings(CBPS::CBPS(d ~ x[,-1],
-                                                      ATT = 0)$coefficients)
+    beta.initial <- .ips_initial_beta(d, x, init.method)
   }
   #-----------------------------------------------------------------------------
   # Define the Objective function for exponential weights
@@ -72,16 +90,14 @@ IPS_exp = function(d, x, xbal = NULL, X.trans = "normal", Treated = FALSE,
   # Define the gradient of the objective function
   #-----------------------------------------------------------------------------
   # Now we are ready to estimate the pscore parameters
-  ips.est.exp <- stats::optim(par = beta.initial,
-                              fn = objIPS,
-                              gr = gradIPS,
-                              method = "BFGS",
-                              control =  list(maxit = maxit, abstol = 1e-8, reltol=1e-8),
-                              d = d,
-                              X = x,
-                              w = w.exp,
-                              treated_flag = treated.flag,
-                              whs = whs)
+  ips.est.exp <- .ips_optim(par = beta.initial,
+                            d = d,
+                            X = x,
+                            w = w.exp,
+                            treated.flag = treated.flag,
+                            whs = whs,
+                            maxit = maxit,
+                            optim.engine = optim.engine)
   
   beta.hat.ips <- ips.est.exp$par
   converged <- ips.est.exp$convergence
@@ -104,7 +120,7 @@ IPS_exp = function(d, x, xbal = NULL, X.trans = "normal", Treated = FALSE,
   lin.rep.hat <- NULL
   if (lin.rep == TRUE){
    lin.rep.hat <- linIPS(beta.hat.ips, d, ps.hat, x, w.exp, treated.flag, whs)
-   covSing <- (Matrix::rankMatrix(base::crossprod(lin.rep.hat))[1] == base::dim(lin.rep.hat)[2])
+   covSing <- .ips_is_full_rank(base::crossprod(lin.rep.hat))
    if(covSing==FALSE) base::message("IPS.exp: The variance-Covariance matrix is close to singular. Used Generalized-Inverse to compute std. errors.")
   }
   

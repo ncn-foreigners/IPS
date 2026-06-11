@@ -17,12 +17,24 @@ kernelIPSexp <- function(X, X_trans) {
     .Call(`_IPS_kernelIPSexp`, X, X_trans)
 }
 
+kernelIPSexpWeighted <- function(X, X_trans, case_weights) {
+    .Call(`_IPS_kernelIPSexpWeighted`, X, X_trans, case_weights)
+}
+
 kernelIPSind <- function(X) {
     .Call(`_IPS_kernelIPSind`, X)
 }
 
+kernelIPSindWeighted <- function(X, case_weights) {
+    .Call(`_IPS_kernelIPSindWeighted`, X, case_weights)
+}
+
 kernelIPSproj <- function(X) {
     .Call(`_IPS_kernelIPSproj`, X)
+}
+
+kernelIPSprojWeighted <- function(X, case_weights) {
+    .Call(`_IPS_kernelIPSprojWeighted`, X, case_weights)
 }
 
 kernelIPSDense <- function(kernel) {
@@ -43,6 +55,10 @@ objIPS <- function(b, d, X, w, treated_flag, whs) {
 
 objLIPS <- function(b, d, z, X, w, whs) {
     .Call(`_IPS_objLIPS`, b, d, z, X, w, whs)
+}
+
+optimIPSCpp <- function(par, d, X, w, treated_flag, whs, maxit, abstol, reltol) {
+    .Call(`_IPS_optimIPSCpp`, par, d, X, w, treated_flag, whs, maxit, abstol, reltol)
 }
 
 weightIPSexp <- function(X, X_trans) {
