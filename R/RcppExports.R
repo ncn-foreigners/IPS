@@ -9,6 +9,26 @@ gradLIPS <- function(b, d, z, X, w, whs) {
     .Call(`_IPS_gradLIPS`, b, d, z, X, w, whs)
 }
 
+kernelIPSdense <- function(weights) {
+    .Call(`_IPS_kernelIPSdense`, weights)
+}
+
+kernelIPSexp <- function(X, X_trans) {
+    .Call(`_IPS_kernelIPSexp`, X, X_trans)
+}
+
+kernelIPSind <- function(X) {
+    .Call(`_IPS_kernelIPSind`, X)
+}
+
+kernelIPSproj <- function(X) {
+    .Call(`_IPS_kernelIPSproj`, X)
+}
+
+kernelIPSDense <- function(kernel) {
+    .Call(`_IPS_kernelIPSDense`, kernel)
+}
+
 linIPS <- function(bhat, d, pshat, X, w, treated_flag, whs) {
     .Call(`_IPS_linIPS`, bhat, d, pshat, X, w, treated_flag, whs)
 }

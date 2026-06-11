@@ -53,10 +53,10 @@ IPS_exp = function(d, x, xbal = NULL, X.trans = "normal", Treated = FALSE,
   #-----------------------------------------------------------------------------
   #Weight function based on exponential: exp{iu'phi(X)}
   if(is.null(xbal)) {
-    w.exp <- weightIPSexp(x[,-1], X.trans) 
+    w.exp <- kernelIPSexp(x[,-1], X.trans)
   } else {
     xbal <- base::as.matrix(xbal)
-    w.exp <- weightIPSexp(xbal, X.trans) 
+    w.exp <- kernelIPSexp(xbal, X.trans)
   }
   
   
@@ -101,6 +101,7 @@ IPS_exp = function(d, x, xbal = NULL, X.trans = "normal", Treated = FALSE,
   #-----------------------------------------------------------------------------
   # Next, we compute an estimate of the asymptotic linear representation of
   # beta.hat - beta
+  lin.rep.hat <- NULL
   if (lin.rep == TRUE){
    lin.rep.hat <- linIPS(beta.hat.ips, d, ps.hat, x, w.exp, treated.flag, whs)
    covSing <- (Matrix::rankMatrix(base::crossprod(lin.rep.hat))[1] == base::dim(lin.rep.hat)[2])

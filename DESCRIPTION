@@ -22,6 +22,9 @@ Imports:
     Rearrangement,
     data.table,
     plyr
+Suggests:
+    testthat (>= 3.0.0)
 LinkingTo: Rcpp, RcppArmadillo
 Encoding: UTF-8
 RoxygenNote: 7.1.2
+Config/testthat/edition: 3

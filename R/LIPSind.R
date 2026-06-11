@@ -51,10 +51,10 @@ LIPS_ind = function(z, d, x, xbal = NULL,
   #-----------------------------------------------------------------------------
   #Weight function based on indicator
   if(is.null(xbal)) {
-    w.ind <- weightIPSind(x) 
+    w.ind <- kernelIPSind(x)
   } else {
     xbal <- base::as.matrix(xbal)
-    w.ind <- weightIPSind(xbal)
+    w.ind <- kernelIPSind(xbal)
   }
   
   #-----------------------------------------------------------------------------
@@ -98,6 +98,7 @@ LIPS_ind = function(z, d, x, xbal = NULL,
   #-----------------------------------------------------------------------------
   # Next, we compute an estimate of the asymptotic linear representation of
   # beta.hat - beta
+  lin.rep.hat <- NULL
   if (lin.rep == TRUE){
     lin.rep.hat <- linLIPS(beta.hat.ips, d, z, ips.hat, x, w.ind, whs)
     covSing <- (Matrix::rankMatrix(base::crossprod(lin.rep.hat))[1] == base::dim(lin.rep.hat)[2])

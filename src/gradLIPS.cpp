@@ -1,11 +1,13 @@
 #include <RcppArmadillo.h>
+#include "ips_kernel.h"
 // [[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
 using namespace arma;
 
 // [[Rcpp::export]]
-arma::vec gradLIPS(arma::vec b, arma::vec d, arma::vec z, arma::mat& X, arma::mat& w, 
-                   arma::vec whs) {
+arma::vec gradLIPS(const arma::vec& b, const arma::vec& d,
+                   const arma::vec& z, const arma::mat& X, SEXP w,
+                   const arma::vec& whs) {
   int nobj = X.n_rows, npar = X.n_cols;
   
   
@@ -45,7 +47,14 @@ arma::vec gradLIPS(arma::vec b, arma::vec d, arma::vec z, arma::mat& X, arma::ma
     
   }
   
-  Qdot = (arma::repmat(hlte1,1,nobj)%w*hltedot1 + arma::repmat(hlte0,1,nobj)%w*hltedot0 ) /nobj;
+  Qdot = ips_kernel_multiply(w, hltedot1);
+  Qdot.each_col() %= hlte1;
+
+  arma::mat Qdot0 = ips_kernel_multiply(w, hltedot0);
+  Qdot0.each_col() %= hlte0;
+
+  Qdot += Qdot0;
+  Qdot /= nobj;
   Qd = 2.0 * trans(mean(Qdot, 0));
   
   

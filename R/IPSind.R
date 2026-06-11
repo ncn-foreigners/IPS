@@ -54,10 +54,10 @@ IPS_ind = function(d, x, xbal = NULL, Treated = FALSE,
   #Weight function based on exponential: exp{iu'phi(X)}
   #w.ind <- weightIPSind(x) 
   if(is.null(xbal)) {
-    w.ind <- weightIPSind(x) 
+    w.ind <- kernelIPSind(x)
   } else {
     xbal <- base::as.matrix(xbal)
-    w.ind <- weightIPSind(xbal)
+    w.ind <- kernelIPSind(xbal)
   }
   #-----------------------------------------------------------------------------
   # initial parameter value for IPS
@@ -100,6 +100,7 @@ IPS_ind = function(d, x, xbal = NULL, Treated = FALSE,
   #-----------------------------------------------------------------------------
   # Next, we compute an estimate of the asymptotic linear representation of
   # beta.hat - beta
+  lin.rep.hat <- NULL
   if (lin.rep == TRUE){
     lin.rep.hat <- linIPS(beta.hat.ips, d, ps.hat, x, w.ind, treated.flag, whs)
     covSing <- (Matrix::rankMatrix(base::crossprod(lin.rep.hat))[1] == base::dim(lin.rep.hat)[2])

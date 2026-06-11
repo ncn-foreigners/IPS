@@ -1,10 +1,12 @@
 #include <RcppArmadillo.h>
+#include "ips_kernel.h"
 // [[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
 using namespace arma;
 
 // [[Rcpp::export]]
-arma::vec gradIPS(arma::vec b, arma::vec d, arma::mat& X, arma::mat& w, double treated_flag, arma::vec whs) {
+arma::vec gradIPS(const arma::vec& b, const arma::vec& d, const arma::mat& X,
+                  SEXP w, double treated_flag, const arma::vec& whs) {
   int nobj = X.n_rows, npar = X.n_cols;
   
   
@@ -26,7 +28,17 @@ arma::vec gradIPS(arma::vec b, arma::vec d, arma::mat& X, arma::mat& w, double t
     h0dot.col(j) =  h0dot.col(j) - w0 * mean(h0dot.col(j));
   }
 
-  arma::mat Qdot = ( (1.0 - treated_flag) * (arma::repmat(w1,1,nobj) -1.0) % w * h1dot + (arma::repmat(w0,1,nobj) -1.0) % w * h0dot)/nobj;
+  arma::vec h1 = w1 - 1.0;
+  arma::vec h0 = w0 - 1.0;
+  arma::mat Qdot =
+    (1.0 - treated_flag) * ips_kernel_multiply(w, h1dot);
+  Qdot.each_col() %= h1;
+
+  arma::mat Qdot0 = ips_kernel_multiply(w, h0dot);
+  Qdot0.each_col() %= h0;
+  Qdot += Qdot0;
+  Qdot /= nobj;
+
   arma::vec Qd = arma::trans(mean(Qdot, 0));
   return Qd;
 }

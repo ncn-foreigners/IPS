@@ -38,7 +38,7 @@ parameters should be provided. Deafault is TRUE.}
 
 \item{maxit}{The maximum number of iterations. Defaults to 50000}
 
-\item{allRows}{Default is FALSE, which attempts to fist check if all rows of the matrix x are unique. If there are draws, it tries to optimize the code, but requires 'x' to be sorted such that all unique rows are together.}
+\item{allRows}{Retained for backward compatibility. Duplicate rows are now handled automatically and do not need to be sorted.}
 }
 \value{
 A list containing the following components:

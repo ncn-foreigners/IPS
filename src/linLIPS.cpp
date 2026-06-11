@@ -1,12 +1,14 @@
 #include <RcppArmadillo.h>
+#include "ips_kernel.h"
 // [[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
 using namespace arma;
 
 
 // [[Rcpp::export]]
-arma::mat linLIPS(arma::vec bhat, arma::vec d, arma::vec z, arma::vec ipshat,
-                  arma::mat& X, arma::mat& w, arma::vec whs) {
+arma::mat linLIPS(const arma::vec& bhat, const arma::vec& d,
+                  const arma::vec& z, const arma::vec& ipshat,
+                  const arma::mat& X, SEXP w, const arma::vec& whs) {
   int nobj = X.n_rows, npar = X.n_cols;
   
   arma::mat Cinv = zeros<arma::mat>(npar,npar);
@@ -49,17 +51,25 @@ arma::mat linLIPS(arma::vec bhat, arma::vec d, arma::vec z, arma::vec ipshat,
   
   
   
-  Cmat = ( trans(hltedot1) * w *hltedot1 + trans(hltedot0) * w *hltedot0 )  / nobj;
+  arma::mat Whltedot1 = ips_kernel_multiply(w, hltedot1);
+  arma::mat Whltedot0 = ips_kernel_multiply(w, hltedot0);
+
+  Cmat = (trans(hltedot1) * Whltedot1 +
+          trans(hltedot0) * Whltedot0) / nobj;
   bool flag = arma::inv(Cinv, Cmat);
   
   if (!flag) {
     Cinv = pinv(Cmat);
     ///Rcout << "The Variance-Covariance Matrix is close to singular - proceed with caution!\n";
-  } else {
-    Cinv = arma::inv(Cmat);
   }
   
-  linrep = -  ( arma::repmat(hlte1, 1, nobj)%w*hltedot1 + arma::repmat(hlte0, 1, nobj)%w*hltedot0) * Cinv;
+  arma::mat lin_core = Whltedot1;
+  lin_core.each_col() %= hlte1;
+
+  Whltedot0.each_col() %= hlte0;
+  lin_core += Whltedot0;
+
+  linrep = - lin_core * Cinv;
   
   
   

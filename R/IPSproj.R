@@ -12,7 +12,7 @@
 #' parameters should be provided. Deafault is TRUE.
 #' @param whs An optional \eqn{n} x \eqn{1} vector of weights to be used. If NULL, then every observation has the same weights.
 #' @param maxit The maximum number of iterations. Defaults to 50000
-#' @param allRows Default is FALSE, which attempts to fist check if all rows of the matrix x are unique. If there are draws, it tries to optimize the code, but requires 'x' to be sorted such that all unique rows are together. 
+#' @param allRows Retained for backward compatibility. Duplicate rows are now handled automatically and do not need to be sorted.
 #' @param x_keep Default is FALSE. If TRUE, we return covariate matrix in the output.
 #' 
 #' @return A list containing the following components:
@@ -61,24 +61,7 @@ IPS_proj = function(d, x, xbal = NULL,Treated = FALSE,
     xbal <- base::as.matrix(xbal)
   }
   
-  # Test if all observations are unique, as this allow us to speed up the codes
-  n.unique <- dplyr::n_distinct(xbal) 
-  
-  if( ((n - n.unique) > 500) &&  allRows == FALSE) {
-    #   use code that avoid number double calculations
-    x1 <- data.table::data.table(xbal)
-    x1 <- data.table::data.table(x1, key = colnames(x1))
-    if(max(abs(xbal-x1))>0) {
-      stop("Matrix 'x' must be sorted such that all unique rows are together./n Otherwise set 'uniqueRows = T', though is usually slower.")
-    }
-    x_unique <- as.matrix(plyr::count(x1)[,-(dim(x1)[2]+1)])
-    vec_rep  <- as.vector(plyr::count(x1)[,(dim(x1)[2]+1)])
-    w.proj <- weightIPSproj_uniq(x_unique, vec_rep) 
-    
-  }
-  else {
-    w.proj <- weightIPSproj(xbal)
-  }
+  w.proj <- kernelIPSproj(xbal)
   
   #-----------------------------------------------------------------------------
   # initial parameter value for IPS
@@ -121,6 +104,7 @@ IPS_proj = function(d, x, xbal = NULL,Treated = FALSE,
   #-----------------------------------------------------------------------------
   # Next, we compute an estimate of the asymptotic linear representation of
   # beta.hat - beta
+  lin.rep.hat <- NULL
   if (lin.rep == TRUE){
     lin.rep.hat <- linIPS(beta.hat.ips, d, ps.hat, x, w.proj, treated.flag, whs)
     covSing <- (Matrix::rankMatrix(base::crossprod(lin.rep.hat))[1] == base::dim(lin.rep.hat)[2])

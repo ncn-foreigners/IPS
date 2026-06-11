@@ -12,145 +12,201 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // gradIPS
-arma::vec gradIPS(arma::vec b, arma::vec d, arma::mat& X, arma::mat& w, double treated_flag, arma::vec whs);
+arma::vec gradIPS(const arma::vec& b, const arma::vec& d, const arma::mat& X, SEXP w, double treated_flag, const arma::vec& whs);
 RcppExport SEXP _IPS_gradIPS(SEXP bSEXP, SEXP dSEXP, SEXP XSEXP, SEXP wSEXP, SEXP treated_flagSEXP, SEXP whsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type b(bSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type d(dSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type X(XSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type b(bSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type d(dSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type w(wSEXP);
     Rcpp::traits::input_parameter< double >::type treated_flag(treated_flagSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type whs(whsSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type whs(whsSEXP);
     rcpp_result_gen = Rcpp::wrap(gradIPS(b, d, X, w, treated_flag, whs));
     return rcpp_result_gen;
 END_RCPP
 }
 // gradLIPS
-arma::vec gradLIPS(arma::vec b, arma::vec d, arma::vec z, arma::mat& X, arma::mat& w, arma::vec whs);
+arma::vec gradLIPS(const arma::vec& b, const arma::vec& d, const arma::vec& z, const arma::mat& X, SEXP w, const arma::vec& whs);
 RcppExport SEXP _IPS_gradLIPS(SEXP bSEXP, SEXP dSEXP, SEXP zSEXP, SEXP XSEXP, SEXP wSEXP, SEXP whsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type b(bSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type d(dSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type z(zSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type X(XSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type w(wSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type whs(whsSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type b(bSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type d(dSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type z(zSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type whs(whsSEXP);
     rcpp_result_gen = Rcpp::wrap(gradLIPS(b, d, z, X, w, whs));
     return rcpp_result_gen;
 END_RCPP
 }
+// kernelIPSdense
+SEXP kernelIPSdense(const arma::mat& weights);
+RcppExport SEXP _IPS_kernelIPSdense(SEXP weightsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type weights(weightsSEXP);
+    rcpp_result_gen = Rcpp::wrap(kernelIPSdense(weights));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kernelIPSexp
+SEXP kernelIPSexp(const arma::mat& X, std::string X_trans);
+RcppExport SEXP _IPS_kernelIPSexp(SEXP XSEXP, SEXP X_transSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< std::string >::type X_trans(X_transSEXP);
+    rcpp_result_gen = Rcpp::wrap(kernelIPSexp(X, X_trans));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kernelIPSind
+SEXP kernelIPSind(const arma::mat& X);
+RcppExport SEXP _IPS_kernelIPSind(SEXP XSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    rcpp_result_gen = Rcpp::wrap(kernelIPSind(X));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kernelIPSproj
+SEXP kernelIPSproj(const arma::mat& X);
+RcppExport SEXP _IPS_kernelIPSproj(SEXP XSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    rcpp_result_gen = Rcpp::wrap(kernelIPSproj(X));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kernelIPSDense
+arma::mat kernelIPSDense(SEXP kernel);
+RcppExport SEXP _IPS_kernelIPSDense(SEXP kernelSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type kernel(kernelSEXP);
+    rcpp_result_gen = Rcpp::wrap(kernelIPSDense(kernel));
+    return rcpp_result_gen;
+END_RCPP
+}
 // linIPS
-arma::mat linIPS(arma::vec bhat, arma::vec d, arma::vec pshat, arma::mat& X, arma::mat& w, double treated_flag, arma::vec whs);
+arma::mat linIPS(const arma::vec& bhat, const arma::vec& d, const arma::vec& pshat, const arma::mat& X, SEXP w, double treated_flag, const arma::vec& whs);
 RcppExport SEXP _IPS_linIPS(SEXP bhatSEXP, SEXP dSEXP, SEXP pshatSEXP, SEXP XSEXP, SEXP wSEXP, SEXP treated_flagSEXP, SEXP whsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type bhat(bhatSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type d(dSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type pshat(pshatSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type X(XSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type bhat(bhatSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type d(dSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type pshat(pshatSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type w(wSEXP);
     Rcpp::traits::input_parameter< double >::type treated_flag(treated_flagSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type whs(whsSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type whs(whsSEXP);
     rcpp_result_gen = Rcpp::wrap(linIPS(bhat, d, pshat, X, w, treated_flag, whs));
     return rcpp_result_gen;
 END_RCPP
 }
 // linLIPS
-arma::mat linLIPS(arma::vec bhat, arma::vec d, arma::vec z, arma::vec ipshat, arma::mat& X, arma::mat& w, arma::vec whs);
+arma::mat linLIPS(const arma::vec& bhat, const arma::vec& d, const arma::vec& z, const arma::vec& ipshat, const arma::mat& X, SEXP w, const arma::vec& whs);
 RcppExport SEXP _IPS_linLIPS(SEXP bhatSEXP, SEXP dSEXP, SEXP zSEXP, SEXP ipshatSEXP, SEXP XSEXP, SEXP wSEXP, SEXP whsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type bhat(bhatSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type d(dSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type z(zSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type ipshat(ipshatSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type X(XSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type w(wSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type whs(whsSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type bhat(bhatSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type d(dSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type z(zSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type ipshat(ipshatSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type whs(whsSEXP);
     rcpp_result_gen = Rcpp::wrap(linLIPS(bhat, d, z, ipshat, X, w, whs));
     return rcpp_result_gen;
 END_RCPP
 }
 // objIPS
-double objIPS(arma::vec b, arma::vec d, arma::mat X, arma::mat w, double treated_flag, arma::vec whs);
+double objIPS(const arma::vec& b, const arma::vec& d, const arma::mat& X, SEXP w, double treated_flag, const arma::vec& whs);
 RcppExport SEXP _IPS_objIPS(SEXP bSEXP, SEXP dSEXP, SEXP XSEXP, SEXP wSEXP, SEXP treated_flagSEXP, SEXP whsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type b(bSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type d(dSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type b(bSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type d(dSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type w(wSEXP);
     Rcpp::traits::input_parameter< double >::type treated_flag(treated_flagSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type whs(whsSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type whs(whsSEXP);
     rcpp_result_gen = Rcpp::wrap(objIPS(b, d, X, w, treated_flag, whs));
     return rcpp_result_gen;
 END_RCPP
 }
 // objLIPS
-double objLIPS(arma::vec b, arma::vec d, arma::vec z, arma::mat& X, arma::mat& w, arma::vec whs);
+double objLIPS(const arma::vec& b, const arma::vec& d, const arma::vec& z, const arma::mat& X, SEXP w, const arma::vec& whs);
 RcppExport SEXP _IPS_objLIPS(SEXP bSEXP, SEXP dSEXP, SEXP zSEXP, SEXP XSEXP, SEXP wSEXP, SEXP whsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type b(bSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type d(dSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type z(zSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type X(XSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type w(wSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type whs(whsSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type b(bSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type d(dSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type z(zSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type whs(whsSEXP);
     rcpp_result_gen = Rcpp::wrap(objLIPS(b, d, z, X, w, whs));
     return rcpp_result_gen;
 END_RCPP
 }
 // weightIPSexp
-arma::mat weightIPSexp(arma::mat X, String X_trans);
+arma::mat weightIPSexp(const arma::mat& X, std::string X_trans);
 RcppExport SEXP _IPS_weightIPSexp(SEXP XSEXP, SEXP X_transSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
-    Rcpp::traits::input_parameter< String >::type X_trans(X_transSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< std::string >::type X_trans(X_transSEXP);
     rcpp_result_gen = Rcpp::wrap(weightIPSexp(X, X_trans));
     return rcpp_result_gen;
 END_RCPP
 }
 // weightIPSind
-arma::mat weightIPSind(arma::mat X);
+arma::mat weightIPSind(const arma::mat& X);
 RcppExport SEXP _IPS_weightIPSind(SEXP XSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
     rcpp_result_gen = Rcpp::wrap(weightIPSind(X));
     return rcpp_result_gen;
 END_RCPP
 }
 // weightIPSproj
-NumericMatrix weightIPSproj(const NumericMatrix& X);
+arma::mat weightIPSproj(const arma::mat& X);
 RcppExport SEXP _IPS_weightIPSproj(SEXP XSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
     rcpp_result_gen = Rcpp::wrap(weightIPSproj(X));
     return rcpp_result_gen;
 END_RCPP
 }
 // weightIPSproj_uniq
-NumericMatrix weightIPSproj_uniq(const NumericMatrix& X, const NumericVector& wgt);
+arma::mat weightIPSproj_uniq(const arma::mat& X, const arma::vec& wgt);
 RcppExport SEXP _IPS_weightIPSproj_uniq(SEXP XSEXP, SEXP wgtSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericMatrix& >::type X(XSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type wgt(wgtSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type wgt(wgtSEXP);
     rcpp_result_gen = Rcpp::wrap(weightIPSproj_uniq(X, wgt));
     return rcpp_result_gen;
 END_RCPP
@@ -159,6 +215,11 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_IPS_gradIPS", (DL_FUNC) &_IPS_gradIPS, 6},
     {"_IPS_gradLIPS", (DL_FUNC) &_IPS_gradLIPS, 6},
+    {"_IPS_kernelIPSdense", (DL_FUNC) &_IPS_kernelIPSdense, 1},
+    {"_IPS_kernelIPSexp", (DL_FUNC) &_IPS_kernelIPSexp, 2},
+    {"_IPS_kernelIPSind", (DL_FUNC) &_IPS_kernelIPSind, 1},
+    {"_IPS_kernelIPSproj", (DL_FUNC) &_IPS_kernelIPSproj, 1},
+    {"_IPS_kernelIPSDense", (DL_FUNC) &_IPS_kernelIPSDense, 1},
     {"_IPS_linIPS", (DL_FUNC) &_IPS_linIPS, 7},
     {"_IPS_linLIPS", (DL_FUNC) &_IPS_linLIPS, 7},
     {"_IPS_objIPS", (DL_FUNC) &_IPS_objIPS, 6},
